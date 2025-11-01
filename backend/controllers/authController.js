@@ -2,7 +2,7 @@
 const axios = require('axios');
 const dotenv = require('dotenv');
 const InstagramAPI = require('../utils/instagramAPI'); 
-
+const BASE_GRAPH_URL = 'https://graph.facebook.com/v20.0';
 dotenv.config();
 
 const { META_APP_ID, META_APP_SECRET, REDIRECT_URI } = process.env;
