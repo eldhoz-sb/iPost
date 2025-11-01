@@ -1,6 +1,6 @@
 // backend/src/routes/authRoutes.js
 const express = require('express');
-const { initiateMetaLogin, metaCallback } = require('../controllers/authController');
+const { initiateMetaLogin, metaCallback, initiateInstagramOnlyLogin, instagramOnlyCallback} = require('../controllers/authController');
 
 const router = express.Router();
 
