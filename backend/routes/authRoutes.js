@@ -1,10 +1,13 @@
-// routes/authRoutes.js
-import express from 'express';
-import { redirectToInstagram, handleInstagramCallback } from '../controllers/authController.js';
+// backend/src/routes/authRoutes.js
+const express = require('express');
+const { initiateMetaLogin, metaCallback } = require('../controllers/authController');
 
 const router = express.Router();
 
-router.get('/auth/instagram', redirectToInstagram);
-router.get('/auth/instagram/callback', handleInstagramCallback);
+// 1. Initiate Login: Redirects user to Meta's authorization page
+router.get('/meta', initiateMetaLogin);
 
-export default router;
+// 2. Callback: Handles the redirect and exchanges the code for a token
+router.get('/meta/callback', metaCallback);
+
+module.exports = router;

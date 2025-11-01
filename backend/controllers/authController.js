@@ -1,31 +1,66 @@
-// controllers/authController.js
-import axios from 'axios';
+// backend/src/controllers/authController.js
+const axios = require('axios');
+const dotenv = require('dotenv');
+const InstagramAPI = require('../utils/instagramAPI'); 
 
-const CLIENT_ID = process.env.INSTAGRAM_CLIENT_ID;
-const CLIENT_SECRET = process.env.INSTAGRAM_CLIENT_SECRET;
-const REDIRECT_URI = process.env.INSTAGRAM_REDIRECT_URI;
+dotenv.config();
 
-// Step 1: Redirect user to Instagram authorization
-export const redirectToInstagram = (req, res) => {
-  const authUrl = `https://api.instagram.com/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&scope=user_profile,user_media&response_type=code`;
-  res.redirect(authUrl);
+const { META_APP_ID, META_APP_SECRET, REDIRECT_URI } = process.env;
+
+// Step 1: Redirect to Meta for authorization
+exports.initiateMetaLogin = (req, res) => {
+    const scopes = 'instagram_basic,pages_show_list,instagram_content_publish,public_profile'; 
+    const authUrl = `https://www.facebook.com/v20.0/dialog/oauth?` +
+        `client_id=${META_APP_ID}&` +
+        `redirect_uri=${REDIRECT_URI}&` +
+        `scope=${scopes}&` +
+        `response_type=code`;
+
+    res.redirect(authUrl);
 };
 
-// Step 2: Handle Instagram OAuth callback and exchange for access token
-export const handleInstagramCallback = async (req, res) => {
-  const code = req.query.code;
-  try {
-    const tokenRes = await axios.post('https://api.instagram.com/oauth/access_token', {
-      client_id: CLIENT_ID,
-      client_secret: CLIENT_SECRET,
-      grant_type: 'authorization_code',
-      redirect_uri: REDIRECT_URI,
-      code,
-    });
+// Step 2: Handle the callback
+exports.metaCallback = async (req, res) => {
+    const { code, error } = req.query;
 
-    res.json(tokenRes.data);
-  } catch (err) {
-    console.error('Instagram Auth Error:', err.response?.data || err.message);
-    res.status(500).json({ error: err.message });
-  }
+    if (error) {
+        return res.status(400).send(`Meta login failed: ${error}`);
+    }
+
+    try {
+        // A. Exchange Code for Short-Lived Access Token
+        const tokenExchangeUrl = `https://graph.facebook.com/v20.0/oauth/access_token?` +
+            `client_id=${META_APP_ID}&` +
+            `redirect_uri=${REDIRECT_URI}&` +
+            `client_secret=${META_APP_SECRET}&` +
+            `code=${code}`;
+        
+        const { data: shortTokenData } = await axios.get(tokenExchangeUrl);
+        const shortToken = shortTokenData.access_token;
+        const userID = shortTokenData.user_id;
+
+        // B. Exchange Short-Lived Token for Long-Lived User Access Token (60 days)
+        const longTokenData = await InstagramAPI.getLongLivedToken(shortToken);
+        const longToken = longTokenData.access_token;
+
+        // C. Get Linked Instagram Account ID and Page Access Token
+        const userCredentials = await InstagramAPI.getInstagramAccountAndPageToken(userID, longToken);
+        
+        // --- SECURELY SAVE CREDENTIALS ---
+        // In a real app, you would save userCredentials (userID, longToken, pageAccessToken, igBusinessId)
+        // to your database, linked to your user's record. For simplicity, we just display it.
+        // For posting, you will need **pageAccessToken** and **igBusinessId**.
+
+        res.send({
+            message: 'Login successful! Save these tokens securely.',
+            userID: userID,
+            longToken: longToken,
+            pageAccessToken: userCredentials.pageAccessToken,
+            igBusinessId: userCredentials.igBusinessId
+        });
+
+    } catch (err) {
+        console.error('Meta Callback Error:', err.response ? err.response.data : err.message);
+        res.status(500).send('Authentication failed due to a server error.');
+    }
 };
