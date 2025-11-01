@@ -1,12 +1,23 @@
-import express from 'express';
-import dotenv from 'dotenv';
-import authRoutes from './routes/authRoutes.js';
+// backend/src/server.js
+const express = require('express');
+const dotenv = require('dotenv');
+const authRoutes = require('./routes/authRoutes');
 
 dotenv.config();
+
 const app = express();
-
-app.use(express.json());
-app.use('/api', authRoutes);
-
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+// Middleware
+app.use(express.json());
+
+// Routes
+app.use('/api/v1/auth', authRoutes);
+
+app.get('/', (req, res) => {
+    res.send('Backend is running. Navigate to /api/v1/auth/meta to start the login.');
+});
+
+app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+});
