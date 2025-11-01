@@ -10,4 +10,7 @@ router.get('/meta', initiateMetaLogin);
 // 2. Callback: Handles the redirect and exchanges the code for a token
 router.get('/meta/callback', metaCallback);
 
+router.get('/instagram-only', initiateInstagramOnlyLogin);
+router.get('/instagram-only/callback', instagramOnlyCallback);
+
 module.exports = router;
