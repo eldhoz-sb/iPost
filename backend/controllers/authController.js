@@ -38,10 +38,11 @@ exports.metaCallback = async (req, res) => {
         const { data: shortTokenData } = await axios.get(tokenExchangeUrl);
         const shortToken = shortTokenData.access_token;
         const userID = shortTokenData.user_id;
-
+        console.log('*** RAW SHORT TOKEN DATA FROM META ***', shortTokenData);
         // B. Exchange Short-Lived Token for Long-Lived User Access Token (60 days)
         const longTokenData = await InstagramAPI.getLongLivedToken(shortToken);
         const longToken = longTokenData.access_token;
+        console.log('*** RAW LONG TOKEN DATA FROM META ***', longTokenData);
 
         // C. Get Linked Instagram Account ID and Page Access Token
         const userCredentials = await InstagramAPI.getInstagramAccountAndPageToken(userID, longToken);
